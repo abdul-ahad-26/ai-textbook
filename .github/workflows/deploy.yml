@@ -42,11 +42,12 @@ jobs:
           GH_REPO: ${{ github.event.repository.name }}
           DEPLOY_URL: https://${{ github.repository_owner }}.github.io
           BASE_URL: /${{ github.event.repository.name }}/
-          # Integration endpoints — set these as repository Variables (Settings →
-          # Secrets and variables → Actions → Variables).
-          BACKEND_URL: ${{ vars.BACKEND_URL }}
-          AUTH_URL: ${{ vars.AUTH_URL }}
-          CHATKIT_DOMAIN_KEY: ${{ vars.CHATKIT_DOMAIN_KEY }}
+          # Integration endpoints — accepted as either repository Variables or
+          # Secrets (Variable wins; falls back to Secret). The ChatKit domain key
+          # is a public client value, so a Variable is fine, but a Secret works too.
+          BACKEND_URL: ${{ vars.BACKEND_URL || secrets.BACKEND_URL }}
+          AUTH_URL: ${{ vars.AUTH_URL || secrets.AUTH_URL }}
+          CHATKIT_DOMAIN_KEY: ${{ vars.CHATKIT_DOMAIN_KEY || secrets.CHATKIT_DOMAIN_KEY }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
