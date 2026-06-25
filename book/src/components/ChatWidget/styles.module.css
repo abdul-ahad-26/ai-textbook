@@ -1,0 +1,104 @@
+.launcher {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  z-index: 900;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  color: #06231f;
+  background: linear-gradient(135deg, #36e0c8, #14b8a3);
+  box-shadow: 0 10px 30px rgba(20, 184, 163, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.launcher:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 14px 38px rgba(20, 184, 163, 0.52); }
+
+.selDot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--pai-physical-bright, #ffb627);
+  border: 2px solid var(--pai-bg, #0b1014);
+  animation: blip 1.6s ease-in-out infinite;
+}
+@keyframes blip { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+.panel {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 5.6rem;
+  z-index: 901;
+  width: min(400px, calc(100vw - 2rem));
+  height: min(620px, calc(100vh - 8rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--pai-surface, #121a21);
+  border: 1px solid var(--pai-line, #243440);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  animation: rise 0.18s ease;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--pai-line, #243440);
+  background: var(--pai-bg, #0b1014);
+}
+.panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pai-digital-bright, #36e0c8);
+  box-shadow: 0 0 8px var(--pai-digital-bright, #36e0c8);
+  animation: blip 1.8s ease-in-out infinite;
+}
+.panelClose {
+  background: none;
+  border: none;
+  color: var(--pai-muted, #7c8a97);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.panelClose:hover { color: var(--ifm-color-content); }
+
+.selBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.9rem;
+  background: color-mix(in srgb, var(--pai-physical-bright, #ffb627) 12%, transparent);
+  border-bottom: 1px solid var(--pai-line, #243440);
+  font-size: 0.78rem;
+}
+.selBanner strong {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pai-physical-bright, #ffb627);
+}
+.selBanner span { color: var(--ifm-color-content-secondary); font-style: italic; }
+
+.panelBody { flex: 1; min-height: 0; }

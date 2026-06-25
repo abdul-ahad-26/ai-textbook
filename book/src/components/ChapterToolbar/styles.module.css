@@ -1,0 +1,86 @@
+.wrap { margin: 0 0 1.5rem; }
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--pai-surface, #f5f8f9);
+  border: 1px solid var(--pai-line, #dde6e8);
+  border-radius: 10px;
+}
+
+.tag {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  color: var(--pai-muted, #5b6a74);
+  margin-right: 0.2rem;
+}
+
+.btn {
+  border: 1px solid var(--pai-line, #dde6e8);
+  background: transparent;
+  color: var(--ifm-color-content);
+  border-radius: 8px;
+  padding: 0.42rem 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.6; cursor: progress; }
+
+.personalize:hover:not(:disabled),
+.personalize.active {
+  border-color: var(--pai-digital-bright, #36e0c8);
+  color: var(--pai-digital, #14b8a3);
+  background: color-mix(in srgb, var(--pai-digital-bright, #36e0c8) 10%, transparent);
+}
+.translate:hover:not(:disabled),
+.translate.active {
+  border-color: var(--pai-physical-bright, #ffb627);
+  color: var(--pai-physical, #d98700);
+  background: color-mix(in srgb, var(--pai-physical-bright, #ffb627) 12%, transparent);
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--pai-muted, #5b6a74);
+  font-style: italic;
+}
+
+.error {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #d14343;
+}
+
+.result {
+  margin-top: 1rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--pai-line, #dde6e8);
+  border-left: 3px solid var(--pai-digital-bright, #36e0c8);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--pai-digital-bright, #36e0c8) 4%, transparent);
+}
+.result[dir='rtl'] {
+  border-left: none;
+  border-right: 3px solid var(--pai-physical-bright, #ffb627);
+  background: color-mix(in srgb, var(--pai-physical-bright, #ffb627) 5%, transparent);
+  text-align: right;
+  font-size: 1.05rem;
+  line-height: 1.9;
+}
+
+.resultLabel {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pai-muted, #5b6a74);
+  margin-bottom: 0.8rem;
+}
+.result[dir='rtl'] .resultLabel { letter-spacing: normal; }

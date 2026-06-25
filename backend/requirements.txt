@@ -1,0 +1,18 @@
+# --- Web framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# --- OpenAI: Agents SDK + ChatKit + client (embeddings, chat) ---
+openai>=1.59.0
+openai-agents>=0.2.0
+openai-chatkit>=1.6.0
+
+# --- Vector store: Qdrant Cloud ---
+qdrant-client>=1.12.0
+
+# --- Neon Serverless Postgres ---
+asyncpg>=0.30.0
+
+# --- Config / models ---
+pydantic>=2.9.0
+pydantic-settings>=2.6.0

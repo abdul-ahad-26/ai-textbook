@@ -1,0 +1,95 @@
+---
+id: intro
+title: Introduction to Physical AI
+sidebar_label: Introduction
+slug: /intro
+description: Foundations of Physical AI and embodied intelligence — the bridge from the digital brain to the physical body.
+keywords: [physical ai, embodied intelligence, humanoid robotics, ros2, isaac, vla]
+---
+
+# Introduction to Physical AI
+
+> **Focus & Theme:** AI Systems in the Physical World. Embodied Intelligence.
+>
+> **Goal:** Bridge the gap between the *digital brain* and the *physical body*. You will apply your AI knowledge to control humanoid robots in simulated and real-world environments.
+
+The future of work will be a partnership between people, intelligent agents (AI software), and
+robots. For the last decade, the most capable AI systems lived entirely in the digital world —
+they read text, generated images, and answered questions, but they could not *act* in the room
+you are sitting in. **Physical AI** is the discipline that changes this: it builds AI systems that
+function in reality and comprehend physical laws.
+
+This textbook teaches you to **design, simulate, and deploy humanoid robots** capable of natural
+human interaction, using the modern open-source and industrial stack: **ROS 2**, **Gazebo**,
+**Unity**, **NVIDIA Isaac**, and **Vision-Language-Action (VLA)** models.
+
+## Why "embodied" intelligence?
+
+A language model predicting the next token has no body, no sensors, and no consequences. An
+*embodied* agent is different in three fundamental ways:
+
+1. **It is situated.** It exists at a specific place and time, perceiving the world through sensors
+   (cameras, LiDAR, IMUs, force/torque) and changing the world through actuators (motors, grippers).
+2. **It is subject to physics.** Gravity, friction, inertia, latency, and noise are not abstractions —
+   they determine whether the robot stays upright or falls over.
+3. **It closes the loop.** Perception → cognition → action → perception. The agent's own actions change
+   what it will perceive next, which is the defining feature of *control*.
+
+Humanoid robots are poised to excel in our human-centered world because they share our physical form
+and can be trained with abundant data from interacting in human environments. This is a significant
+transition from AI models confined to digital environments to **embodied intelligence that operates
+in physical space**.
+
+## The architecture you will build
+
+Throughout this course, every concept maps onto a concrete lab architecture:
+
+| Layer | Hardware / Software | Function |
+|-------|---------------------|----------|
+| **Sim Rig** | RTX workstation + Ubuntu 22.04 | Runs Isaac Sim, Gazebo, Unity; trains LLM/VLA models |
+| **Edge Brain** | NVIDIA Jetson Orin Nano | Runs the inference stack; where your code is deployed |
+| **Sensors** | RealSense camera + LiDAR | Feed real-world data to the AI |
+| **Actuator** | Unitree Go2 / G1 (shared) | Receives motor commands from the Jetson |
+
+You do not need to own this hardware to learn. The entire course is designed to run in **simulation
+first** — you will prove your robot works in Gazebo and Isaac Sim before a single motor turns.
+
+## The four modules
+
+This book follows the course's four-module arc, from the robot's "nervous system" up to its "mind":
+
+- **Module 1 — The Robotic Nervous System (ROS 2):** the middleware that lets software talk to motors and sensors.
+- **Module 2 — The Digital Twin (Gazebo & Unity):** physics simulation and high-fidelity environments.
+- **Module 3 — The AI-Robot Brain (NVIDIA Isaac):** photorealistic simulation, VSLAM, and navigation.
+- **Module 4 — Vision-Language-Action (VLA):** the convergence of LLMs and robotics, ending in a capstone autonomous humanoid.
+
+## Learning outcomes
+
+By the end of this textbook you will be able to:
+
+1. Explain Physical AI principles and embodied intelligence.
+2. Use **ROS 2** (nodes, topics, services, actions) for robotic control.
+3. Simulate robots with **Gazebo** and visualize them in **Unity**.
+4. Develop perception and navigation with the **NVIDIA Isaac** platform.
+5. Design humanoid robots for natural interactions.
+6. Integrate large language models for **conversational, voice-driven robotics**.
+
+## How to use this AI-native textbook
+
+This is not a static PDF. It is **AI-native**:
+
+- 💬 **Ask the book anything.** The chat assistant (bottom-right) is a Retrieval-Augmented Generation
+  (RAG) agent that answers using *this book's actual content*. **Select any text on the page** and the
+  assistant will scope its answer to just that selection.
+- 🎯 **Personalize a chapter.** If you sign in and tell us your software/hardware background, every
+  chapter has a **Personalize** button that rewrites the material for your exact experience level.
+- 🌐 **Read in Urdu.** Every chapter has a **Translate to Urdu** button (اردو میں ترجمہ کریں).
+
+:::tip Start here
+New to robotics? Read this introduction, then begin with
+[Module 1 → ROS 2 Overview](/module-1-ros2/overview). Already know ROS? Jump to
+[Module 3 → NVIDIA Isaac](/module-3-isaac/overview) or the
+[Capstone project](/module-4-vla/capstone-autonomous-humanoid).
+:::
+
+Let's build robots that understand the physical world.

@@ -1,0 +1,64 @@
+name: Deploy book to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'book/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: book
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: book/package-lock.json
+
+      - run: npm ci
+
+      - name: Build
+        env:
+          # Derive Pages location from the repo automatically.
+          GH_ORG: ${{ github.repository_owner }}
+          GH_REPO: ${{ github.event.repository.name }}
+          DEPLOY_URL: https://${{ github.repository_owner }}.github.io
+          BASE_URL: /${{ github.event.repository.name }}/
+          # Integration endpoints — set these as repository Variables (Settings →
+          # Secrets and variables → Actions → Variables).
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+          AUTH_URL: ${{ vars.AUTH_URL }}
+          CHATKIT_DOMAIN_KEY: ${{ vars.CHATKIT_DOMAIN_KEY }}
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: book/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,65 @@
+.figure {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  filter: drop-shadow(0 0 24px rgba(54, 224, 200, 0.12));
+}
+
+.digital {
+  stroke: #36e0c8;
+  opacity: 0.92;
+}
+
+.physical {
+  stroke: #ffb627;
+  opacity: 0.96;
+}
+
+.nodeDigital {
+  fill: #0b1014;
+  stroke: #36e0c8;
+  stroke-width: 2;
+}
+
+.nodePhysical {
+  fill: #ffb627;
+  stroke: #1a1205;
+  stroke-width: 1.5;
+}
+
+.nodeHub {
+  fill: #e6edf2;
+  stroke: #7c8a97;
+  stroke-width: 1.5;
+}
+
+.triad {
+  opacity: 0.85;
+}
+
+/* scan line sweeps top -> bottom, looping */
+.scanline {
+  animation: sweep 3.6s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(392px); opacity: 0; }
+}
+
+/* gentle joint pulse on the physical side */
+.nodePhysical {
+  animation: pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanline { animation: none; opacity: 0.4; }
+  .nodePhysical { animation: none; opacity: 1; }
+}
