@@ -30,11 +30,13 @@ export function getAuthClient() {
   _client = createAuthClient({
     baseURL: getAuthUrl(),
     fetchOptions: {
-      // Bearer-only auth: explicitly OMIT credentials. Better-Auth defaults to
-      // `credentials: 'include'` (for cookies); sending credentials cross-site
-      // forces the CORS Allow-Credentials handshake and blocks the request
-      // ("Failed to fetch"). We don't use cookies, so omit them entirely.
-      credentials: 'omit',
+      // Bearer-only auth: force `credentials: 'omit'` at the actual fetch call.
+      // Better-Auth defaults to (and re-applies) `credentials: 'include'` for
+      // cookies; including credentials cross-site forces the CORS Allow-Credentials
+      // handshake and blocks the request ("Failed to fetch"). Wrapping the fetch
+      // impl is the only place Better-Auth can't override it back.
+      customFetchImpl: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, {...(init ?? {}), credentials: 'omit'}),
       auth: {
         type: 'Bearer',
         token: () => getStoredToken(),
