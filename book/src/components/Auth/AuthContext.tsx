@@ -1,5 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {getAuthClient, clearStoredToken, profileFromUser, type SessionUser, type UserProfile} from '@site/src/lib/authClient';
+import {useRuntimeConfig, setAuthUrl} from '@site/src/lib/runtimeConfig';
 
 type AuthState = {
   user: SessionUser | null;
@@ -18,6 +19,12 @@ const AuthCtx = createContext<AuthState>({
 });
 
 export function AuthProvider({children}: {children: React.ReactNode}) {
+  // Sync the auth URL from the build-time config BEFORE any effect creates the
+  // client. Child-component effects run before parent (Root) effects, so relying on
+  // Root's effect to set the URL left the client pointing at the localhost default.
+  const {authUrl} = useRuntimeConfig();
+  setAuthUrl(authUrl);
+
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 

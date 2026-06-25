@@ -23,20 +23,46 @@ export function clearStoredToken(): void {
   if (typeof window !== 'undefined') window.localStorage.removeItem(TOKEN_KEY);
 }
 
+/**
+ * Force `credentials: 'omit'` for every Better-Auth request by patching the global
+ * fetch (Better-Auth uses the global fetch and ignores fetchOptions.credentials).
+ * Cross-site requests with credentials require the CORS Allow-Credentials handshake
+ * and get blocked; we use bearer tokens, so cookies/credentials aren't needed.
+ * Scoped to /api/auth/ URLs so it never affects ChatKit or the backend.
+ */
+function patchAuthFetch() {
+  if (typeof window === 'undefined') return;
+  const w = window as unknown as {__paiAuthFetchPatched?: boolean};
+  if (w.__paiAuthFetchPatched) return;
+  const orig = window.fetch.bind(window);
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    let url = '';
+    try {
+      url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+    } catch {
+      /* ignore */
+    }
+    if (url.includes('/api/auth/')) {
+      return orig(input, {...(init ?? {}), credentials: 'omit'});
+    }
+    return orig(input, init);
+  };
+  w.__paiAuthFetchPatched = true;
+}
+
 let _client: ReturnType<typeof createAuthClient> | null = null;
+let _clientUrl = '';
 
 export function getAuthClient() {
-  if (_client) return _client;
+  const url = getAuthUrl();
+  // Recreate if the configured auth URL changed (e.g. it was the localhost default
+  // when first read, then updated from the deployed config).
+  if (_client && _clientUrl === url) return _client;
+  patchAuthFetch();
+  _clientUrl = url;
   _client = createAuthClient({
-    baseURL: getAuthUrl(),
+    baseURL: url,
     fetchOptions: {
-      // Bearer-only auth: force `credentials: 'omit'` at the actual fetch call.
-      // Better-Auth defaults to (and re-applies) `credentials: 'include'` for
-      // cookies; including credentials cross-site forces the CORS Allow-Credentials
-      // handshake and blocks the request ("Failed to fetch"). Wrapping the fetch
-      // impl is the only place Better-Auth can't override it back.
-      customFetchImpl: (input: RequestInfo | URL, init?: RequestInit) =>
-        fetch(input, {...(init ?? {}), credentials: 'omit'}),
       auth: {
         type: 'Bearer',
         token: () => getStoredToken(),
