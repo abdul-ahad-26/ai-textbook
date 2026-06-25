@@ -1,3 +1,13 @@
+---
+title: Physical AI Textbook Auth
+emoji: 🔐
+colorFrom: yellow
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Auth Server — Better-Auth
 
 Standalone authentication service for the textbook. Provides email/password
