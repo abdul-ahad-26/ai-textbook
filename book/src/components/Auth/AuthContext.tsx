@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import {getAuthClient, profileFromUser, type SessionUser, type UserProfile} from '@site/src/lib/authClient';
+import {getAuthClient, clearStoredToken, profileFromUser, type SessionUser, type UserProfile} from '@site/src/lib/authClient';
 
 type AuthState = {
   user: SessionUser | null;
@@ -37,6 +37,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     try {
       await getAuthClient().signOut();
     } finally {
+      clearStoredToken();
       setUser(null);
     }
   }, []);

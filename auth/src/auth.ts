@@ -1,4 +1,5 @@
 import {betterAuth} from 'better-auth';
+import {bearer} from 'better-auth/plugins';
 import {Pool} from 'pg';
 
 /**
@@ -25,6 +26,12 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     minPasswordLength: 8,
   },
+
+  // Bearer-token sessions. The book (github.io) and this server (hf.space) are
+  // different sites, so the session cookie is third-party and blocked by modern
+  // browsers. The bearer plugin lets the client hold the token and send it as an
+  // Authorization header instead, which works cross-site without cookies.
+  plugins: [bearer()],
 
   // Extra profile fields captured at signup, used to personalize content.
   user: {

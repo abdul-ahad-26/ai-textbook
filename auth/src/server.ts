@@ -14,6 +14,8 @@ app.use(
   cors({
     origin: [bookOrigin, ...extra, /https:\/\/.*\.github\.io$/],
     credentials: true,
+    // Expose the bearer token header so the browser client can read and store it.
+    exposedHeaders: ['set-auth-token'],
   }),
 );
 
