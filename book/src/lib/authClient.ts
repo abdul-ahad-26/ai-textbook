@@ -30,7 +30,9 @@ export function getAuthClient() {
   _client = createAuthClient({
     baseURL: getAuthUrl(),
     fetchOptions: {
-      credentials: 'include',
+      // No cookies — we authenticate purely with bearer tokens (set below), so we
+      // deliberately omit `credentials: 'include'`. Sending credentials would force
+      // the cross-site CORS "Allow-Credentials" handshake and can block requests.
       auth: {
         type: 'Bearer',
         token: () => getStoredToken(),
