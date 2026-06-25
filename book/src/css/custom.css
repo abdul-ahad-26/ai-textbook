@@ -87,12 +87,54 @@
 /* Headings get the display face + tight tracking */
 h1, h2, h3 { letter-spacing: -0.018em; }
 
-/* Navbar: glassy control-room bar with a hairline rule */
+/* Navbar: glassy control-room bar with a cyan→amber seam underline */
 .navbar {
-  backdrop-filter: blur(10px);
+  position: relative;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--pai-line);
 }
-.navbar__title { font-family: var(--ifm-heading-font-family); font-weight: 600; letter-spacing: -0.01em; }
+/* the signature seam — ties navbar to hero + footer */
+.navbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--pai-digital-bright) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--pai-physical-bright) 100%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.navbar__title {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.navbar__logo {
+  filter: drop-shadow(0 0 6px rgba(54, 224, 200, 0.25));
+}
+/* Nav links pick up the digital accent on hover/active */
+.navbar__link {
+  font-weight: 500;
+  transition: color 0.14s ease;
+}
+.navbar__link:hover,
+.navbar__link--active {
+  color: var(--pai-digital);
+}
+[data-theme='dark'] .navbar__link:hover,
+[data-theme='dark'] .navbar__link--active {
+  color: var(--pai-digital-bright);
+}
+/* The GitHub icon-link gets a subtle mono/uppercase weight */
+.navbar__items--right .navbar__link {
+  font-size: 0.92rem;
+}
 
 /* Sidebar category labels read like system modules */
 .menu__list-item-collapsible .menu__link { font-weight: 500; }
