@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import {useLocation} from '@docusaurus/router';
 import {useRuntimeConfig} from '@site/src/lib/runtimeConfig';
 import {useAuth} from '@site/src/components/Auth/AuthContext';
+import {getStoredToken} from '@site/src/lib/authClient';
 import AuthModal from '@site/src/components/Auth/AuthModal';
 import styles from './styles.module.css';
 
@@ -50,7 +51,9 @@ export default function ChapterToolbar() {
       // Guard against rapid double-clicks / re-entry while a request is in flight.
       if (loadingRef.current) return;
       setError(null);
-      if (which === 'personalize' && !user) {
+      // Both AI tools are logged-in only (personalize uses your profile; the brief
+      // scopes Urdu translation to signed-in readers too).
+      if (!user) {
         setShowAuth(true);
         return;
       }
@@ -73,16 +76,16 @@ export default function ChapterToolbar() {
       loadingRef.current = which;
       setLoading(which);
       try {
+        const token = getStoredToken();
         const res = await fetch(`${backendUrl}/${which}`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            content,
-            user_id: user?.id ?? null,
-            profile: which === 'personalize' ? profile : null,
-            chapter_id: location.pathname,
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? {Authorization: `Bearer ${token}`} : {}),
+          },
+          body: JSON.stringify({content, chapter_id: location.pathname}),
         });
+        if (res.status === 401) throw new Error('Please sign in again to use this tool');
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const data = await res.json();
         const markdown = data.markdown || '';
@@ -117,7 +120,7 @@ export default function ChapterToolbar() {
           {loading === 'translate' ? 'ترجمہ ہو رہا ہے…' : mode === 'translate' ? '✕ Show original' : 'اردو میں ترجمہ کریں'}
         </button>
         {!user && (
-          <span className={styles.hint}>Sign in to personalize</span>
+          <span className={styles.hint}>Sign in to use AI tools</span>
         )}
       </div>
 

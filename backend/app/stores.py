@@ -38,6 +38,11 @@ def _new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:24]}"
 
 
+def _ctx_user_id(context: Any) -> str | None:
+    """The verified user id for the current request, or None for anonymous."""
+    return getattr(context, "user_id", None)
+
+
 class NeonStore(Store):
     """Postgres-backed ChatKit store."""
 
@@ -47,18 +52,24 @@ class NeonStore(Store):
         return _new_id(prefix)
 
     # ---- threads ----
+    # Threads are scoped to their owner (context.user_id). `IS NOT DISTINCT FROM`
+    # treats NULL = NULL, so an anonymous caller can only reach NULL-owned threads
+    # and a signed-in caller only their own — preventing cross-user reads/deletes.
     async def load_thread(self, thread_id: str, context: Any) -> ThreadMetadata:
+        user_id = _ctx_user_id(context)
         pool = await get_pool()
         async with pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT payload FROM chatkit_threads WHERE id = $1", thread_id)
+            row = await conn.fetchrow(
+                "SELECT payload FROM chatkit_threads WHERE id = $1 AND user_id IS NOT DISTINCT FROM $2",
+                thread_id,
+                user_id,
+            )
         if row is None:
             raise KeyError(f"thread {thread_id} not found")
         return _THREAD_ADAPTER.validate_python(json.loads(row["payload"]))
 
     async def save_thread(self, thread: ThreadMetadata, context: Any) -> None:
-        user_id = getattr(getattr(context, "user_id", None), "__str__", lambda: None)()
-        if hasattr(context, "user_id"):
-            user_id = context.user_id
+        user_id = _ctx_user_id(context)
         pool = await get_pool()
         async with pool.acquire() as conn:
             await conn.execute(
@@ -71,11 +82,17 @@ class NeonStore(Store):
             )
 
     async def load_threads(self, limit: int, after: str | None, order: str, context: Any) -> Page:
-        pool = await get_pool()
+        user_id = _ctx_user_id(context)
+        # Anonymous callers get no history list — that removes the enumeration vector
+        # while still letting an in-flight thread be loaded by its (unguessable) id.
+        if user_id is None:
+            return Page(data=[], has_more=False, after=None)
         direction = "DESC" if (order or "desc").lower() == "desc" else "ASC"
+        pool = await get_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                f"SELECT payload FROM chatkit_threads ORDER BY updated_at {direction} LIMIT $1",
+                f"SELECT payload FROM chatkit_threads WHERE user_id = $1 ORDER BY updated_at {direction} LIMIT $2",
+                user_id,
                 limit + 1,
             )
         items = [_THREAD_ADAPTER.validate_python(json.loads(r["payload"])) for r in rows]
@@ -85,10 +102,17 @@ class NeonStore(Store):
         return Page(data=items, has_more=has_more, after=next_after)
 
     async def delete_thread(self, thread_id: str, context: Any) -> None:
+        user_id = _ctx_user_id(context)
         pool = await get_pool()
         async with pool.acquire() as conn:
-            await conn.execute("DELETE FROM chatkit_items WHERE thread_id = $1", thread_id)
-            await conn.execute("DELETE FROM chatkit_threads WHERE id = $1", thread_id)
+            # Only delete (and cascade items) if the thread belongs to this caller.
+            owned = await conn.fetchval(
+                "DELETE FROM chatkit_threads WHERE id = $1 AND user_id IS NOT DISTINCT FROM $2 RETURNING id",
+                thread_id,
+                user_id,
+            )
+            if owned:
+                await conn.execute("DELETE FROM chatkit_items WHERE thread_id = $1", thread_id)
 
     # ---- items ----
     async def add_thread_item(self, thread_id: str, item: ThreadItem, context: Any) -> None:
@@ -121,6 +145,10 @@ class NeonStore(Store):
     async def load_thread_items(
         self, thread_id: str, after: str | None, limit: int, order: str, context: Any
     ) -> Page:
+        # NOTE on the f-strings below: nothing user-controlled is interpolated. `direction`
+        # and `cmp` come from a fixed whitelist; `${len(params)}` is a computed placeholder
+        # INDEX, not a value. All actual values (thread_id, after_seq, limit) are bound via
+        # asyncpg $N parameters, so this is not SQL-injectable.
         pool = await get_pool()
         direction = "DESC" if (order or "asc").lower() == "desc" else "ASC"
         async with pool.acquire() as conn:

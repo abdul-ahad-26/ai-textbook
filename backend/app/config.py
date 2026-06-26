@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # ---- App ----
     # Comma-separated list of allowed CORS origins (the book + auth server).
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
+    # Regex for additional allowed origins. Tightened to the production hosts only
+    # (GitHub Pages + Hugging Face Spaces); dev tunnels are no longer wildcarded.
+    cors_origin_regex: str = r"^https://[a-z0-9-]+\.github\.io$|^https://[a-z0-9-]+\.hf\.space$"
     # When DATABASE_URL is unset we fall back to an in-memory thread store so the
     # backend still runs for a quick local smoke test.
     use_memory_store_fallback: bool = True
