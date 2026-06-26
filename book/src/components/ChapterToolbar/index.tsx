@@ -1,14 +1,37 @@
-import React, {useCallback, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {useLocation} from '@docusaurus/router';
 import {useRuntimeConfig} from '@site/src/lib/runtimeConfig';
 import {useAuth} from '@site/src/components/Auth/AuthContext';
-import {getStoredToken} from '@site/src/lib/authClient';
+import {getStoredToken, type UserProfile} from '@site/src/lib/authClient';
 import AuthModal from '@site/src/components/Auth/AuthModal';
 import styles from './styles.module.css';
 
 type Mode = 'personalize' | 'translate';
+
+/**
+ * Session-lifetime cache of transform results, shared across the toolbar's
+ * per-chapter remounts (the component is keyed by pathname, see DocItem/Content).
+ *
+ * The key is `mode :: chapterId :: profileSignature`, so a cached result can never
+ * leak to a different chapter or a different reader profile. Translate is
+ * profile-independent, so its signature slot is empty. This lives only in memory —
+ * a full page reload starts fresh, which is the right scope for paid, per-chapter
+ * AI output (no quota or staleness concerns from persisting big markdown blobs).
+ */
+const resultCache = new Map<string, string>();
+
+function cacheKey(mode: Mode, chapterId: string, profileSig: string): string {
+  return `${mode}::${chapterId}::${mode === 'personalize' ? profileSig : ''}`;
+}
+
+/** Order-stable signature of the personalization profile (JSON.stringify isn't). */
+function profileSignature(p: UserProfile): string {
+  return [p.experienceLevel, p.softwareBackground, p.hardwareBackground]
+    .map((v) => v ?? '')
+    .join('|');
+}
 
 function readChapterMarkdown(): string {
   if (typeof document === 'undefined') return '';
@@ -26,24 +49,39 @@ export default function ChapterToolbar() {
   const {backendUrl} = useRuntimeConfig();
   const {user, profile} = useAuth();
   const location = useLocation();
+  const chapterId = location.pathname;
 
   const [mode, setMode] = useState<Mode | null>(null);
   const [loading, setLoading] = useState<Mode | null>(null);
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  // The chapter's untransformed text, captured while it is still on screen — a
+  // hidden element's innerText reads as empty, so we must grab it before hiding.
   const originalRef = useRef<string>('');
-  // Cache each transform's result so re-pressing a button reuses it instead of
-  // making another (paid, slow) API call. Keyed by mode + the profile snapshot,
-  // so a personalize result is invalidated if the user's profile changes.
-  const cacheRef = useRef<Record<string, string>>({});
   const loadingRef = useRef<Mode | null>(null);
+
+  // On unmount (e.g. navigating to another chapter) always restore the original's
+  // visibility, in case Docusaurus reuses the .theme-doc-markdown element and our
+  // display:none would otherwise carry over to the next chapter.
+  useEffect(() => () => setOriginalHidden(false), []);
+
+  const captureOriginal = useCallback(() => {
+    if (!originalRef.current) originalRef.current = readChapterMarkdown();
+    return originalRef.current;
+  }, []);
 
   const close = useCallback(() => {
     setOriginalHidden(false);
     setMode(null);
     setResult('');
     setError(null);
+  }, []);
+
+  const show = useCallback((which: Mode, markdown: string) => {
+    setResult(markdown);
+    setMode(which);
+    setOriginalHidden(true);
   }, []);
 
   const run = useCallback(
@@ -58,18 +96,14 @@ export default function ChapterToolbar() {
         return;
       }
 
-      const content = originalRef.current || readChapterMarkdown();
-      originalRef.current = content;
+      // Grab the source text now, while the original is visible.
+      const content = captureOriginal();
+      const key = cacheKey(which, chapterId, profileSignature(profile));
 
-      const cacheKey =
-        which === 'personalize' ? `personalize:${JSON.stringify(profile)}` : 'translate';
-
-      // Serve from cache on a repeat press — no second API call.
-      const cached = cacheRef.current[cacheKey];
-      if (cached) {
-        setResult(cached);
-        setMode(which);
-        setOriginalHidden(true);
+      // Serve from the session cache on a repeat press — no second (paid) API call.
+      const cached = resultCache.get(key);
+      if (cached !== undefined) {
+        show(which, cached);
         return;
       }
 
@@ -83,16 +117,14 @@ export default function ChapterToolbar() {
             'Content-Type': 'application/json',
             ...(token ? {Authorization: `Bearer ${token}`} : {}),
           },
-          body: JSON.stringify({content, chapter_id: location.pathname}),
+          body: JSON.stringify({content, chapter_id: chapterId}),
         });
         if (res.status === 401) throw new Error('Please sign in again to use this tool');
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const data = await res.json();
         const markdown = data.markdown || '';
-        cacheRef.current[cacheKey] = markdown;
-        setResult(markdown);
-        setMode(which);
-        setOriginalHidden(true);
+        resultCache.set(key, markdown);
+        show(which, markdown);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Request failed');
       } finally {
@@ -100,7 +132,7 @@ export default function ChapterToolbar() {
         setLoading(null);
       }
     },
-    [backendUrl, user, profile, location.pathname],
+    [backendUrl, user, profile, chapterId, captureOriginal, show],
   );
 
   return (
