@@ -5,26 +5,11 @@ import {useLocation} from '@docusaurus/router';
 import {useRuntimeConfig} from '@site/src/lib/runtimeConfig';
 import {useAuth} from '@site/src/components/Auth/AuthContext';
 import {getStoredToken, type UserProfile} from '@site/src/lib/authClient';
+import {getCached, setCached, makeKey, hashText} from '@site/src/lib/transformCache';
 import AuthModal from '@site/src/components/Auth/AuthModal';
 import styles from './styles.module.css';
 
 type Mode = 'personalize' | 'translate';
-
-/**
- * Session-lifetime cache of transform results, shared across the toolbar's
- * per-chapter remounts (the component is keyed by pathname, see DocItem/Content).
- *
- * The key is `mode :: chapterId :: profileSignature`, so a cached result can never
- * leak to a different chapter or a different reader profile. Translate is
- * profile-independent, so its signature slot is empty. This lives only in memory —
- * a full page reload starts fresh, which is the right scope for paid, per-chapter
- * AI output (no quota or staleness concerns from persisting big markdown blobs).
- */
-const resultCache = new Map<string, string>();
-
-function cacheKey(mode: Mode, chapterId: string, profileSig: string): string {
-  return `${mode}::${chapterId}::${mode === 'personalize' ? profileSig : ''}`;
-}
 
 /** Order-stable signature of the personalization profile (JSON.stringify isn't). */
 function profileSignature(p: UserProfile): string {
@@ -98,11 +83,13 @@ export default function ChapterToolbar() {
 
       // Grab the source text now, while the original is visible.
       const content = captureOriginal();
-      const key = cacheKey(which, chapterId, profileSignature(profile));
+      // Key on chapter + profile + a hash of the source, so the cache hits across
+      // navigation and reloads but re-generates if the chapter content changes.
+      const key = makeKey(which, chapterId, profileSignature(profile), hashText(content));
 
-      // Serve from the session cache on a repeat press — no second (paid) API call.
-      const cached = resultCache.get(key);
-      if (cached !== undefined) {
+      // Serve from the persistent cache on a repeat — no second (paid) API call.
+      const cached = getCached(key);
+      if (cached !== null) {
         show(which, cached);
         return;
       }
@@ -123,7 +110,7 @@ export default function ChapterToolbar() {
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const data = await res.json();
         const markdown = data.markdown || '';
-        resultCache.set(key, markdown);
+        setCached(key, markdown);
         show(which, markdown);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Request failed');

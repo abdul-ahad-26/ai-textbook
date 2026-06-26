@@ -15,7 +15,7 @@ type Props = WrapperProps<typeof ContentType>;
  * The toolbar is keyed by pathname so it remounts on every chapter change. That
  * keeps its per-chapter state (which transform is shown, the captured original
  * text) from leaking across chapters in the single-page app; the result cache that
- * should survive navigation is held at module scope inside the toolbar instead.
+ * should survive navigation/reloads lives in localStorage (see lib/transformCache).
  */
 export default function ContentWrapper(props: Props): React.ReactElement {
   const {pathname} = useLocation();
