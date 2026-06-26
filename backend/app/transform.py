@@ -18,6 +18,30 @@ def _clamp(text: str) -> str:
     return text if len(text) <= MAX_CHARS else text[:MAX_CHARS]
 
 
+# Languages that signal "the whole reply is one markdown document" — only these are
+# stripped, so a genuine ```python / ```bash chapter code block is never touched.
+_OUTER_FENCE_LANGS = {"", "markdown", "md", "gfm", "text"}
+
+
+def _strip_outer_fence(text: str) -> str:
+    """Remove a code fence wrapping the ENTIRE reply.
+
+    Models sometimes return the whole chapter inside ```markdown … ```, which then
+    renders as one monospace, non-wrapping code block instead of formatted prose.
+    """
+    s = text.strip()
+    if not s.startswith("```") or not s.endswith("```"):
+        return text
+    nl = s.find("\n")
+    if nl == -1:
+        return text
+    lang = s[3:nl].strip().lower()
+    if lang not in _OUTER_FENCE_LANGS:
+        return text
+    body = s[nl + 1 : s.rfind("```")]
+    return body.strip("\n")
+
+
 def _profile_line(profile: dict[str, Any]) -> str:
     sw = profile.get("softwareBackground") or profile.get("software_background") or "unspecified"
     hw = profile.get("hardwareBackground") or profile.get("hardware_background") or "unspecified"
@@ -34,7 +58,8 @@ async def personalize_chapter(content: str, profile: dict[str, Any]) -> str:
         "- Keep every code block; you may add a short clarifying comment but do not break the code.\n"
         "- For beginners: expand jargon, add intuition and analogies, slow down.\n"
         "- For experts: be concise, skip basics, add depth, cross-references, and caveats.\n"
-        "- Do not invent facts beyond the chapter's scope. Return GitHub-flavored Markdown only."
+        "- Do not invent facts beyond the chapter's scope. Return GitHub-flavored Markdown only.\n"
+        "- Output the Markdown directly; do NOT wrap your whole response in a code fence."
     )
     user = f"Reader profile: {_profile_line(profile)}\n\n--- CHAPTER MARKDOWN ---\n{_clamp(content)}"
     resp = await get_openai().chat.completions.create(
@@ -42,7 +67,7 @@ async def personalize_chapter(content: str, profile: dict[str, Any]) -> str:
         messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         temperature=0.4,
     )
-    return resp.choices[0].message.content or content
+    return _strip_outer_fence(resp.choices[0].message.content or content)
 
 
 async def translate_to_urdu(content: str) -> str:
@@ -54,7 +79,8 @@ async def translate_to_urdu(content: str) -> str:
         "only comments and prose.\n"
         "- Keep widely-used technical terms (ROS 2, LiDAR, URDF, VSLAM, GPU) in English where Urdu "
         "has no established equivalent, optionally with a short Urdu gloss in parentheses.\n"
-        "- Output valid GitHub-flavored Markdown in Urdu, right-to-left friendly."
+        "- Output valid GitHub-flavored Markdown in Urdu, right-to-left friendly.\n"
+        "- Output the Markdown directly; do NOT wrap your whole response in a code fence."
     )
     resp = await get_openai().chat.completions.create(
         model=settings.openai_model,
@@ -64,4 +90,4 @@ async def translate_to_urdu(content: str) -> str:
         ],
         temperature=0.2,
     )
-    return resp.choices[0].message.content or content
+    return _strip_outer_fence(resp.choices[0].message.content or content)

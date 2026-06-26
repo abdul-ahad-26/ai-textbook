@@ -75,6 +75,23 @@
   line-height: 1.9;
 }
 
+/* The result is rendered markdown — keep long content inside the box. Code blocks
+   wrap (and scroll if needed) instead of overflowing the column, and any stray
+   long token breaks rather than clipping. */
+.result :global(pre) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.result :global(p),
+.result :global(li),
+.result :global(h1),
+.result :global(h2),
+.result :global(h3) {
+  overflow-wrap: anywhere;
+}
+
 .resultLabel {
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.68rem;
